@@ -1,0 +1,40 @@
+{
+    "name": "digitalpulsebe/craft-public-upload-detector",
+    "description": "Detect form fields that upload to a public folder",
+    "type": "craft-plugin",
+    "license": "mit",
+    "support": {
+        "email": "support@digitalpulse.be",
+        "issues": "https://github.com/digitalpulsebe/craft-public-upload-detector/issues?state=open",
+        "source": "https://github.com/digitalpulsebe/craft-public-upload-detector",
+        "docs": "https://github.com/digitalpulsebe/craft-public-upload-detector",
+        "rss": "https://github.com/digitalpulsebe/craft-public-upload-detector/releases.atom"
+    },
+    "require": {
+        "php": ">=7.4",
+        "craftcms/cms": "^4.3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "digitalpulsebe\\pud\\": "src/"
+        }
+    },
+    "extra": {
+        "handle": "public-upload-detector",
+        "name": "Public Upload Detector",
+        "developer": "Digital Pulse NV",
+        "documentationUrl": "https://github.com/digitalpulsebe/craft-public-upload-detector",
+        "class": "digitalpulsebe\\pud\\PublicUploadDetector"
+    },
+    "config": {
+        "sort-packages": true,
+        "platform": {
+            "php": "8.0.2"
+        },
+        "allow-plugins": {
+            "yiisoft/yii2-composer": true,
+            "craftcms/plugin-installer": true
+        }
+    }
+}
+
