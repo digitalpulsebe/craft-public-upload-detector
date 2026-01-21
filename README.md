@@ -31,4 +31,17 @@ return [
 
 ## Usage
 
+### Detecting form fields that upload to a public folder
+
 Run the command `php craft public-upload-detector/check` to detect form fields that upload to a public folder
+
+### Enforce data retention on forms
+
+Run the command `php craft public-upload-detector/data-retention/enforce` to enforce data retention on forms
+
+Options:
+
+- `--days=90` - Number of days to retain data (default: 90)
+- `--keep=false` - Keep or delete file uploads (default: false)
+
+For example: `php craft public-upload-detector/data-retention/enforce --days=30 --keep=true`
