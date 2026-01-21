@@ -7,7 +7,10 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\ModelEvent;
 use digitalpulsebe\pud\models\Settings;
-use verbb\formie\elements\Form;
+use Solspace\Freeform\controllers\api\FormsController;
+use Solspace\Freeform\Events\Forms\PersistFormEvent;
+use Solspace\Freeform\Form\Form as FreeformForm;
+use verbb\formie\elements\Form as FormieForm;
 use verbb\formie\fields\formfields\FileUpload;
 use yii\base\Event;
 
@@ -49,20 +52,20 @@ class PublicUploadDetector extends Plugin
 
     private function attachEventHandlers(): void
     {
-        if ($this->getSettings()->restrictFormie) {
+        if ($this->getSettings()->restrictFormie && class_exists(FormieForm::class)) {
             $this->restrictFormieFields();
+        }
+        if ($this->getSettings()->restrictFreeform && class_exists(FreeformForm::class)) {
+            $this->restrictFreeformFields();
         }
 
     }
 
     protected function restrictFormieFields(): void
     {
-        /**
-         * Only allow the volume 'forms' to be used as the upload location source for File Upload fields
-         */
         Event::on(
-            Form::class,
-            Form::EVENT_BEFORE_SAVE,
+            FormieForm::class,
+            FormieForm::EVENT_BEFORE_SAVE,
             function(ModelEvent $event) {
                 /** @var Form $form */
                 $form = $event->sender;
@@ -91,6 +94,49 @@ class PublicUploadDetector extends Plugin
                                 $field->addError('uploadLocationSource', 'Upload location source must be set to private volume');
                             }
                         }
+                    }
+                }
+            });
+    }
+
+    protected function restrictFreeformFields(): void
+    {
+        Event::on(
+            FormsController::class,
+            FormsController::EVENT_UPDATE_FORM,
+            function (PersistFormEvent $event) {
+                $fields = $event->getPayload()->layout->fields;
+
+                foreach ($fields as $field) {
+                    if (
+                        str_contains($field->typeClass, 'FileUpload')
+//                        || str_contains($field->typeClass, 'ImageField')
+                        || str_contains($field->typeClass, 'FileDragAndDropField')
+                    ) {
+                        $selectedAssetSource = $field->properties->assetSourceId;
+                        $allowed = false;
+
+                        if (!empty($selectedAssetSource)) {
+                            $volume = Craft::$app->getVolumes()->getVolumeById($selectedAssetSource);
+                            $fileSystem = $volume?->getFs();
+
+                            if (!empty($volume)
+                                && !in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)
+                                && !empty($fileSystem)
+                            ) {
+                                if (!$fileSystem->hasUrls) {
+                                    $allowed = true;
+                                }
+                            }
+                        }
+
+                        if (!$allowed) {
+                            $event->addErrorsToResponse(
+                                'fields',
+                                [$field->uid => ['assetSourceId' => ['Upload location source must be set to private volume']]]
+                            );
+                        }
+
                     }
                 }
             });

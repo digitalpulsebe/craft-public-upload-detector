@@ -1,5 +1,11 @@
 # Release Notes for Public Upload Detector
 
+## Unreleased
+
+### Added
+
+- restrict Freeform upload fields to public assets
+
 ## 4.0.1 - 2026-01-21
 
 ### Added
