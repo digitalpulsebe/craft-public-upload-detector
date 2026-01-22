@@ -1,5 +1,11 @@
 # Release Notes for Public Upload Detector
 
+## 4.1.1 - 2026-01-22
+
+### Changed
+
+- stop data-retention/enforce when formie is not found
+
 ## 4.1.0 - 2026-01-22
 
 ### Added
