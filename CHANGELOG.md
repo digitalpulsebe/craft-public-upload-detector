@@ -1,6 +1,6 @@
 # Release Notes for Public Upload Detector
 
-## Unreleased
+## 4.1.0 - 2026-01-22
 
 ### Added
 
