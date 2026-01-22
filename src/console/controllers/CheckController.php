@@ -2,6 +2,8 @@
 
 namespace digitalpulsebe\pud\console\controllers;
 
+use digitalpulsebe\pud\PublicUploadDetector;
+use Solspace\Freeform\Freeform;
 use verbb\formie\Formie;
 use Craft;
 use yii\console\ExitCode;
@@ -16,11 +18,27 @@ class CheckController extends \craft\console\Controller
     {
         $detections = [];
 
+        if (class_exists(Formie::class)) {
+            $detections = array_merge($detections, $this->findFormieForms());
+        }
+
+        if (class_exists(Freeform::class)) {
+            $detections = array_merge($detections, $this->findFreeformForms());
+        }
+
+        echo json_encode($detections)."\n";
+        return ExitCode::OK;
+    }
+
+    protected function findFormieForms()
+    {
+        $detections = [];
+
         foreach (Formie::getInstance()->getFields()->getAllFields() as $field) {
-            if (str_contains(get_class($field),'FileUpload')) {
-                $volume = Craft::$app->volumes->getVolumeByUid(str_replace('volume:','', $field->uploadLocationSource));
-                if ($volume?->getFs()?->hasUrls ?? false) {
-                    $form = Formie::getInstance()->getForms()->getFormByUid(str_replace('formie:','', $field->context));
+            if (str_contains(get_class($field), 'FileUpload')) {
+                $volume = Craft::$app->volumes->getVolumeByUid(str_replace('volume:', '', $field->uploadLocationSource));
+                if ($volume && $volume->getFs() && $volume->getFs()->hasUrls) {
+                    $form = Formie::getInstance()->getForms()->getFormByUid(str_replace('formie:', '', $field->context));
                     $detections[] = [
                         'field_name' => $field->name,
                         'field_handle' => $field->handle,
@@ -34,7 +52,51 @@ class CheckController extends \craft\console\Controller
             }
         }
 
-        echo json_encode($detections)."\n";
-        return ExitCode::OK;
+        return $detections;
+    }
+
+    protected function findFreeformForms()
+    {
+        $detections = [];
+
+        foreach (Freeform::getInstance()->forms->getAllForms() as $form) {
+            foreach ($form->getLayout()->getFields() as $field) {
+                if (
+                    $field instanceof \Solspace\Freeform\Fields\Interfaces\FileUploadInterface
+                    && $field instanceof \Solspace\Freeform\Fields\AbstractField
+                ) {
+                    $selectedAssetSource = $field->getAssetSourceId();
+                    $allowed = false; $volume = null;
+
+                    if (!empty($selectedAssetSource)) {
+                        $volume = Craft::$app->getVolumes()->getVolumeById($selectedAssetSource);
+                        $fileSystem = $volume ? $volume->getFs() : null;
+
+                        if (!empty($volume)
+                            && !in_array($volume->handle, PublicUploadDetector::getInstance()->settings->allowedPublicVolumeHandles)
+                            && !empty($fileSystem)
+                        ) {
+                            if (!$fileSystem->hasUrls) {
+                                $allowed = true;
+                            }
+                        }
+                    }
+
+                    if (!$allowed) {
+                        $detections[] = [
+                            'field_name' => $field->getLabel(),
+                            'field_handle' => $field->getHandle(),
+                            'form_title' => $form->getName(),
+                            'form_handle' => $form->getHandle(),
+                            'volume_name' => $volume ? $volume->name : '',
+                            'volume_handle' => $volume ? $volume->handle : '',
+                            'field_uploadLocationSubpath' => $field->getDefaultUploadLocation(),
+                        ];
+                    }
+                }
+            }
+        }
+
+        return $detections;
     }
 }

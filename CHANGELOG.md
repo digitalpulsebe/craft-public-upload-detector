@@ -5,6 +5,7 @@
 ### Added
 
 - restrict Freeform upload fields to public assets
+- detect Freeform fields that are linked to public volumes
 
 ## 4.0.1 - 2026-01-21
 

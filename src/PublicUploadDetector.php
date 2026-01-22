@@ -83,7 +83,7 @@ class PublicUploadDetector extends Plugin
 
                         $volumeUid = str_replace('volume:', '', $rawSource);
                         $volume = Craft::$app->getVolumes()->getVolumeByUid($volumeUid);
-                        $fileSystem = $volume?->getFs();
+                        $fileSystem = $volume ? $volume->getFs() : null;
 
                         if (!empty($volume)
                             && !in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)
@@ -110,7 +110,6 @@ class PublicUploadDetector extends Plugin
                 foreach ($fields as $field) {
                     if (
                         str_contains($field->typeClass, 'FileUpload')
-//                        || str_contains($field->typeClass, 'ImageField')
                         || str_contains($field->typeClass, 'FileDragAndDropField')
                     ) {
                         $selectedAssetSource = $field->properties->assetSourceId;
@@ -118,7 +117,7 @@ class PublicUploadDetector extends Plugin
 
                         if (!empty($selectedAssetSource)) {
                             $volume = Craft::$app->getVolumes()->getVolumeById($selectedAssetSource);
-                            $fileSystem = $volume?->getFs();
+                            $fileSystem = $volume ? $volume->getFs() : null;
 
                             if (!empty($volume)
                                 && !in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)
