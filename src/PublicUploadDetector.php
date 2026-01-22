@@ -75,13 +75,8 @@ class PublicUploadDetector extends Plugin
                 foreach ($fields as $field) {
                     // check if the field is a File Upload field
                     if ($field instanceof FileUpload) {
-                        $rawSource = $field->uploadLocationSource;
-
-                        if (empty($rawSource)) {
-                            continue;
-                        }
-
-                        $volumeUid = str_replace('volume:', '', $rawSource);
+                        $parts = explode(':', $field->uploadLocationSource, 2);
+                        $volumeUid = $parts[1] ?? null;
                         $volume = Craft::$app->getVolumes()->getVolumeByUid($volumeUid);
                         $fileSystem = $volume ? $volume->getFs() : null;
 

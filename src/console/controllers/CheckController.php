@@ -36,7 +36,9 @@ class CheckController extends \craft\console\Controller
 
         foreach (Formie::getInstance()->getFields()->getAllFields() as $field) {
             if (str_contains(get_class($field), 'FileUpload')) {
-                $volume = Craft::$app->volumes->getVolumeByUid(str_replace('volume:', '', $field->uploadLocationSource));
+                $parts = explode(':', $field->uploadLocationSource, 2);
+                $volumeUid = $parts[1] ?? null;
+                $volume = Craft::$app->volumes->getVolumeByUid($volumeUid);
                 if ($volume && $volume->getFs() && $volume->getFs()->hasUrls) {
                     $form = Formie::getInstance()->getForms()->getFormByUid(str_replace('formie:', '', $field->context));
                     $detections[] = [
