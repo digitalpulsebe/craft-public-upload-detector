@@ -24,6 +24,11 @@ class DataRetentionController extends \craft\console\Controller
      */
     public function actionEnforce()
     {
+        if (!class_exists(Formie::class)) {
+            $this->stdout("Only supported for Formie\n");
+            return ExitCode::OK;
+        }
+
         $days = $this->days;
         $fileUploadsAction = ($this->keep == 'true') ? 'retain' : 'delete';
 
