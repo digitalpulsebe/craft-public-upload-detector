@@ -1,5 +1,11 @@
 # Release Notes for Public Upload Detector
 
+## 4.1.2 - 2026-01-22
+
+### Fixed
+
+- formie volume uid logic
+
 ## 4.1.1 - 2026-01-22
 
 ### Changed
