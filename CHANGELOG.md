@@ -1,5 +1,11 @@
 # Release Notes for Public Upload Detector
 
+## 4.1.3 - 2026-01-23
+
+### Fixed
+
+- formie get form that belongs to field in check
+
 ## 4.1.2 - 2026-01-22
 
 ### Fixed
