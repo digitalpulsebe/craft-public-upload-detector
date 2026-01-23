@@ -36,18 +36,28 @@ class CheckController extends \craft\console\Controller
 
         foreach (Formie::getInstance()->getFields()->getAllFields() as $field) {
             if (str_contains(get_class($field), 'FileUpload')) {
+                $allowed = false;
                 $parts = explode(':', $field->uploadLocationSource, 2);
                 $volumeUid = $parts[1] ?? null;
-                $volume = Craft::$app->volumes->getVolumeByUid($volumeUid);
-                if ($volume && $volume->getFs() && $volume->getFs()->hasUrls) {
-                    $form = $field->getForm();
+                $volume = $volumeUid ? Craft::$app->volumes->getVolumeByUid($volumeUid) : null;
+
+                if ($volume && $volume->getFs() && !$volume->getFs()->hasUrls) {
+                    $allowed = true;
+                }
+
+                if (in_array($volume->handle, PublicUploadDetector::getInstance()->settings->allowedPublicVolumeHandles)) {
+                    $allowed = true;
+                }
+
+                if (!$allowed) {
+                    $form = Formie::$plugin->getForms()->getFormByLayoutId($field->layoutId);
                     $detections[] = [
                         'field_name' => $field->name,
                         'field_handle' => $field->handle,
-                        'form_title' => $form ? $form->title : null,
-                        'form_handle' => $form ? $form->handle : null,
-                        'volume_name' => $volume->name,
-                        'volume_handle' => $volume->handle,
+                        'form_title' => $form?->title,
+                        'form_handle' => $form?->handle,
+                        'volume_name' => $volume?->name,
+                        'volume_handle' => $volume?->handle,
                         'field_uploadLocationSubpath' => $field->uploadLocationSubpath,
                     ];
                 }

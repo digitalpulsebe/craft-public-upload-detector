@@ -75,19 +75,26 @@ class PublicUploadDetector extends Plugin
                 foreach ($fields as $field) {
                     // check if the field is a File Upload field
                     if ($field instanceof FileUpload) {
+                        $allowed = false;
                         $parts = explode(':', $field->uploadLocationSource, 2);
                         $volumeUid = $parts[1] ?? null;
-                        $volume = Craft::$app->getVolumes()->getVolumeByUid($volumeUid);
-                        $fileSystem = $volume ? $volume->getFs() : null;
+                        $volume = $volumeUid ? Craft::$app->volumes->getVolumeByUid($volumeUid) : null;
 
-                        if (!empty($volume)
-                            && !in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)
-                            && !empty($fileSystem)
+                        if (
+                            $volume
+                            && $volume->getFs()
+                            && !$volume->getFs()->hasUrls
                         ) {
-                            if ($fileSystem->hasUrls) {
-                                $event->isValid = false;
-                                $field->addError('uploadLocationSource', 'Upload location source must be set to private volume');
-                            }
+                            $allowed = true;
+                        }
+
+                        if (in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)) {
+                            $allowed = true;
+                        }
+
+                        if (!$allowed) {
+                            $event->isValid = false;
+                            $field->addError('uploadLocationSource', 'Upload location source must be set to private volume');
                         }
                     }
                 }
