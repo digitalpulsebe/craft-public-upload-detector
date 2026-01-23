@@ -40,12 +40,12 @@ class CheckController extends \craft\console\Controller
                 $volumeUid = $parts[1] ?? null;
                 $volume = Craft::$app->volumes->getVolumeByUid($volumeUid);
                 if ($volume && $volume->getFs() && $volume->getFs()->hasUrls) {
-                    $form = Formie::getInstance()->getForms()->getFormByUid(str_replace('formie:', '', $field->context));
+                    $form = $field->getForm();
                     $detections[] = [
                         'field_name' => $field->name,
                         'field_handle' => $field->handle,
-                        'form_title' => $form->title,
-                        'form_handle' => $form->handle,
+                        'form_title' => $form ? $form->title : null,
+                        'form_handle' => $form ? $form->handle : null,
                         'volume_name' => $volume->name,
                         'volume_handle' => $volume->handle,
                         'field_uploadLocationSubpath' => $field->uploadLocationSubpath,
