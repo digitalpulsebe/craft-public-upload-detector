@@ -58,7 +58,7 @@ class DataRetentionController extends \craft\console\Controller
                 if ($form->hasErrors()) {
                     $this->stdout("failed\n", BaseConsole::FG_RED);
 
-                    $this->stderr(print_r($form->getConsolidatedErrors(), true), BaseConsole::FG_RED);
+                    $this->stderr(print_r($form->getErrors(), true), BaseConsole::FG_RED);
                 } else {
                     $this->stdout("done\n", BaseConsole::FG_GREEN);
                 }

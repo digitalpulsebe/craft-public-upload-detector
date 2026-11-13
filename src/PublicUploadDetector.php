@@ -6,12 +6,14 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\events\ModelEvent;
+use craft\models\Volume;
 use digitalpulsebe\pud\models\Settings;
 use Solspace\Freeform\controllers\api\FormsController;
 use Solspace\Freeform\Events\Forms\PersistFormEvent;
 use Solspace\Freeform\Form\Form as FreeformForm;
 use verbb\formie\elements\Form as FormieForm;
-use verbb\formie\fields\formfields\FileUpload;
+use verbb\formie\fields\FileUpload;
+use verbb\formie\Formie as FormiePlugin;
 use yii\base\Event;
 
 /**
@@ -67,38 +69,63 @@ class PublicUploadDetector extends Plugin
             FormieForm::class,
             FormieForm::EVENT_BEFORE_SAVE,
             function(ModelEvent $event) {
-                /** @var Form $form */
+                /** @var FormieForm $form */
                 $form = $event->sender;
 
-                $fields = $form->getCustomFields();
+                $fields = $form->getFields();
 
                 foreach ($fields as $field) {
                     // check if the field is a File Upload field
-                    if ($field instanceof FileUpload) {
-                        $allowed = false;
-                        $parts = explode(':', $field->uploadLocationSource, 2);
-                        $volumeUid = $parts[1] ?? null;
-                        $volume = $volumeUid ? Craft::$app->volumes->getVolumeByUid($volumeUid) : null;
+                    if ($field instanceof FileUpload && !$this->isFormieUploadFieldAllowed($field)) {
+                        $event->isValid = false;
+                        $message = 'Upload location source must be set to private volume';
+                        $field->addError('uploadLocationSource', $message);
 
-                        if (
-                            $volume
-                            && $volume->getFs()
-                            && !$volume->getFs()->hasUrls
-                        ) {
-                            $allowed = true;
-                        }
-
-                        if (in_array($volume->handle, $this->settings->allowedPublicVolumeHandles)) {
-                            $allowed = true;
-                        }
-
-                        if (!$allowed) {
-                            $event->isValid = false;
-                            $field->addError('uploadLocationSource', 'Upload location source must be set to private volume');
-                        }
+                        // Formie only reports form-level errors back to the form builder,
+                        // so also add it to the form, otherwise the save fails silently
+                        $form->addError('formLayout', Craft::t('app', '{label}: {message}', [
+                            'label' => $field->label ?: $field->handle,
+                            'message' => $message,
+                        ]));
                     }
                 }
             });
+    }
+
+    /**
+     * Resolve the volume a Formie upload field stores its files in.
+     * Formie 4 falls back to the field type defaults when no upload location is set on the field.
+     */
+    public function getFormieUploadVolume(FileUpload $field): ?Volume
+    {
+        $source = $field->uploadLocationSource
+            ?: (FormiePlugin::$plugin->getFormDefaults()->resolveFieldTypeDefaults(FileUpload::class)['uploadLocationSource'] ?? null);
+
+        if (!$source) {
+            return null;
+        }
+
+        $parts = explode(':', $source, 2);
+        $volumeUid = $parts[1] ?? null;
+
+        return $volumeUid ? Craft::$app->getVolumes()->getVolumeByUid($volumeUid) : null;
+    }
+
+    public function isFormieUploadFieldAllowed(FileUpload $field): bool
+    {
+        $volume = $this->getFormieUploadVolume($field);
+
+        if (!$volume) {
+            return false;
+        }
+
+        if (in_array($volume->handle, $this->getSettings()->allowedPublicVolumeHandles, true)) {
+            return true;
+        }
+
+        $fs = $volume->getFs();
+
+        return $fs && !$fs->hasUrls;
     }
 
     protected function restrictFreeformFields(): void

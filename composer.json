@@ -14,6 +14,9 @@
         "php": ">=8.0",
         "craftcms/cms": "^5.0"
     },
+    "conflict": {
+        "verbb/formie": "<4.0.0"
+    },
     "autoload": {
         "psr-4": {
             "digitalpulsebe\\pud\\": "src/"
@@ -37,4 +40,3 @@
         }
     }
 }
-

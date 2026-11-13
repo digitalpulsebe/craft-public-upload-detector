@@ -1,5 +1,11 @@
 # Release Notes for Public Upload Detector
 
+## 5.2.0 - 2026-11-13
+
+### Changed
+
+- Formie 4 support
+
 ## 5.1.2 - 2026-01-23
 
 ### Fixed

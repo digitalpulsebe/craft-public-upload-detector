@@ -5,6 +5,7 @@ namespace digitalpulsebe\pud\console\controllers;
 use digitalpulsebe\pud\PublicUploadDetector;
 use Solspace\Freeform\Freeform;
 use verbb\formie\Formie;
+use verbb\formie\fields\FileUpload;
 use Craft;
 use yii\console\ExitCode;
 
@@ -35,24 +36,15 @@ class CheckController extends \craft\console\Controller
         $detections = [];
 
         foreach (Formie::getInstance()->getFields()->getAllFields() as $field) {
-            if (str_contains(get_class($field), 'FileUpload')) {
-                $allowed = false;
-                $parts = explode(':', $field->uploadLocationSource, 2);
-                $volumeUid = $parts[1] ?? null;
-                $volume = $volumeUid ? Craft::$app->volumes->getVolumeByUid($volumeUid) : null;
-
-                if ($volume && $volume->getFs() && !$volume->getFs()->hasUrls) {
-                    $allowed = true;
-                }
-
-                if (in_array($volume->handle, PublicUploadDetector::getInstance()->settings->allowedPublicVolumeHandles)) {
-                    $allowed = true;
-                }
+            if ($field instanceof FileUpload) {
+                $plugin = PublicUploadDetector::getInstance();
+                $volume = $plugin->getFormieUploadVolume($field);
+                $allowed = $plugin->isFormieUploadFieldAllowed($field);
 
                 if (!$allowed) {
                     $form = Formie::$plugin->getForms()->getFormByLayoutId($field->layoutId);
                     $detections[] = [
-                        'field_name' => $field->name,
+                        'field_name' => $field->label,
                         'field_handle' => $field->handle,
                         'form_title' => $form?->title,
                         'form_handle' => $form?->handle,
